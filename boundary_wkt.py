@@ -23,17 +23,6 @@ export_df = import_df[['device_id',columnhead]].copy()
 export_df[columnhead] = export_df[columnhead].fillna("no bounds") 
 export_df
 
-'''
-def switchcoords(text):
-    text= text.split(";")
-    polygon = "POLYGON(("
-    for i in text:
-        line = i.split()
-        coord = line[1] +" " + line[0]
-        polygon = polygon + coord
-    polygon = polygon +"))"
-    return polygon
-'''
 def switchcoords(text):
     text= text.split(";")
     if len(text) < 3: #invalid number of coords
