@@ -25,7 +25,7 @@ import fiona
 pd.set_option('display.max_colwidth', -1)
 os.chdir('c:\\Users\\Annie\\Downloads')
 
-
+'''
 "reading ona file and outputting min max coords for bbox"
 ona_csv = pd.read_csv(ona_file_name)
 
@@ -56,7 +56,7 @@ x_low = (min(odd))
  
 y_high= (max(even))
 y_low = (min(even))
-
+'''
 
 "getting osm topology"
 set_wkt = pd. read_csv(wkt_file_name)
@@ -68,14 +68,8 @@ gdf = gpd.GeoDataFrame(set_wkt, crs=crs, geometry=geometry)
 gdf.to_file('lagos_test_bound.shp')
 
 set_bound = fiona.open('lagos_test_bound.shp')
-set_bound
-#set_bound = gpd.read_file("hoima_bound1.shp")
-
 as_shape = set_bound.next()
-
 bound_asshape = shape(as_shape['geometry'])
-
-
 
 #set_osm = ox.buildings.create_buildings_gdf(polygon = hoima_asshape, north = y_high, south = y_low, east = x_high, west = x_low) 
 set_osm = ox.buildings.create_buildings_gdf(polygon = bound_asshape)
@@ -93,9 +87,7 @@ set_rds = ox.project_graph(set_rds)
 #set_rds = ox.save_graph_shapefile(set_rds, filename = 'lagos_test_ntwrk')
 set_rds_gdf = ox.save_load.graph_to_gdfs(set_rds, nodes=True, edges=True, node_geometry=True, fill_edge_geometry=True)
 
-ntwrk_edges = gpd.read_file("edges.shp")
-ntwrk_edges = ntwrk_edges.to_crs(epsg = 3587)
+#ntwrk_edges = gpd.read_file("edges.shp")
+#ntwrk_edges = ntwrk_edges.to_crs(epsg = 3587)
+#ntwrk_edges.to_file('lagos_test_rds.shp')
 
-set_bd.plot(ax = ntwrk_edges.plot())
-
-ntwrk_edges
