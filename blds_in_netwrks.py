@@ -6,31 +6,31 @@ Created on Thu Mar  7 11:08:13 2019
 """
 
 'lets make a polygon outta a road network and then intersect it w buildingsss'
-import numpy as np
 import pandas as pd
 import geopandas as gpd
-import scipy.spatial as spatial
 import os
 import shapely
 from shapely.geometry import Point, LineString, Polygon, shape
-import pytess
-import osmnx as ox  
+import osmnx as ox 
+import fiona 
 
 os.chdir('c:\\Users\\Annie\\Downloads')
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_colwidth', -1)
 
+
+set_bound = fiona.open('lagos_test_bound.shp')
+set_bound
+as_shape = set_bound.next()
+bound_asshape = shape(as_shape['geometry'])
+
 set_rds = ox.core.graph_from_polygon(polygon = bound_asshape, network_type = 'drive')
 set_rds = ox.project_graph(set_rds)
-#ox.plot_graph(set_rds)
-#set_rds = ox.save_graph_shapefile(set_rds, filename = 'lagos_test_ntwrk')
+ 
+set_rds_gdf = ox.save_load.graph_to_gdfs(set_rds, nodes=False, edges=True, node_geometry=False, fill_edge_geometry=True)
+print(set_rds_gdf['geometry'])
+rd_poly = list([shapely.ops.polygonize(set_rds_gdf['geometry']) for n in set_rds_gdf['geometry']])
+rd_poly
 
-set_rds_gdf
-as_shape = set_bound.next()
-
-rd_asshape = shape(as_shape['geometry'])
-
-rd_poly = list(shapely.ops.polygonize(rd_lines))
-print(hoima_vor_poly)
-hoima_vor_gdf = gpd.GeoDataFrame(crs = {'init': 'epsg:3857'}, geometry = hoima_vor_poly)
-hoima_vor_gdf.plot()
+rd_poly_gdf = gpd.GeoDataFrame(crs = {'init': 'epsg:3857'}, geometry = rd_poly)
+rd_poly_gdf.plot()
