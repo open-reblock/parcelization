@@ -1,10 +1,8 @@
-import sys
 import json
+import sys
 
-from itertools import tee
+from shapely.geometry import asShape, mapping
 from shapely.ops import polygonize
-from shapely.geometry import asShape
-from shapely.geometry import mapping
 
 highway_whitelist = {'primary', 'secondary', 'tertiary', 'residential', 'trunk'}
 
@@ -15,12 +13,19 @@ def main(argv=None):
 
     with open(filename) as input_file:
         unfiltered_geojson = json.load(input_file)
+    
+    polygons = run_polygonization_pipeline(unfiltered_geojson)
+
+    with open("polygons_" + filename, 'w') as output_file:
+        json.dump(polygons, output_file)
+
+
+def run_polygonization_pipeline(unfiltered_geojson):
     filtered_streets = filter_to_streets(unfiltered_geojson)
     segmented_streets = segment_streets(filtered_streets)
     polygons = polygonize_streets(segmented_streets)
 
-    with open("polygons_" + filename, 'w') as output_file:
-        json.dump(polygons, output_file)
+    return polygons
 
 def filter_to_streets(geojson):
     geojson['features'] = [feature for feature in geojson['features'] if feature['properties']['highway'] in highway_whitelist]
@@ -33,9 +38,9 @@ def segment_streets(multipoint_lines):
     }
 
     for feature in multipoint_lines['features']:
-        curr_, next_ = tee(feature['geometry']['coordinates'], 2)
-        next(next_)
-        output['features'] += [get_line_feature(start, stop, feature['properties']) for (start, stop) in zip(curr_, next_)]
+        output['features'] += [
+            get_line_feature(current, feature['geometry']['coordinates'][i+1], feature['properties']) 
+            for (i, current) in enumerate(feature['geometry']['coordinates'][:-1])]
     return output
 
 def get_line_feature(start, stop, properties):
