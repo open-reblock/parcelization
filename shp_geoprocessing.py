@@ -20,20 +20,20 @@ bounds_filename = 'yyy.shp'
 
 'reading/checking .shp files'
 set_bounds = gpd.read_file(bounds_filename)
-set_bounds = set_bounds.to_crs(epsg= 26393)
+set_bounds = set_bounds.to_crs(epsg= ####) #use approp projected crs for region 
 sb_gdf = gpd.GeoDataFrame(set_bounds, crs = set_bounds.crs)
 sb_gdf
 set_bounds = set_bounds.plot(alpha = .1)
 set_bounds.plot()
 
 set_bldgs = gpd.read_file(bldgs_filename)
-set_bldgs = set_bldgs.to_crs(epsg = 26393)
+set_bldgs = set_bldgs.to_crs(epsg = ####)
 sbds_gdf = gpd.GeoDataFrame(set_bldgs, crs = set_bldgs.crs)
 
 set_bldgs.plot(ax = set_bounds)
 
 'calculating land use stats'
-bound_area =float(sb_gdf['section_13'])
+bound_area =float(sb_gdf['insert area field here'])
 sbds_gdf['area'] = sbds_gdf['geometry'].area
 bld_area = (sbds_gdf['area'].sum())
 percent_built = bld_area / bound_area
@@ -52,8 +52,8 @@ bldgs_inbnds.to_file('intersection.shp')
 
 "performing geoprocessing on buildings in ona bounds"
 '1. buffer'
-set_intersect = gpd.read_file('lagosp0.shp')
-set_intersect.crs = {'init': 'epsg:26393'}
+set_intersect = gpd.read_file(bldgs_filename)
+set_intersect.crs = {'init': 'epsg:####'}
 set_intersect['geometry']
 set_intersect.plot()
 set_buff = set_intersect.buffer(.00001)
@@ -106,7 +106,7 @@ set_lines
 
 set_vor_poly = list(shapely.ops.polygonize(set_lines))
 print(set_vor_poly)
-set_vor_gdf = gpd.GeoDataFrame(crs = {'init': 'epsg:26393'}, geometry = set_vor_poly)
+set_vor_gdf = gpd.GeoDataFrame(crs = {'init': 'epsg:####'}, geometry = set_vor_poly)
 
 
 #set_vor_gdf.plot()
