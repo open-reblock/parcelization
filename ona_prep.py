@@ -48,7 +48,7 @@ def get_osm_graph(data_prefix, _id, name, polygon):
         print(_id, name, e)
         return None
 
-def main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column, output_filename, network_search_buffer = 0.001):
+def main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column, output_filename, network_search_buffer = 0.001, parcel_files=None, export_shapefile=False):
     # network_search_buffer: suggest 0.001 for single-settlement zoom-ins, 0.01 for graph construction
 
     print("reading data")
@@ -67,27 +67,34 @@ def main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column
     polygons = diff_polygonize(buffered_multipolygon, linestrings)
 
     print("plotting")
-    fig, ax = ox.plot_graph(road_network, close=False, show=False)
+    # fig, ax = ox.plot_graph(road_network, close=False, show=False)
 
-    for polygon in original_polygons:
-        ax.add_patch(PolygonPatch(polygon, fc='#bb5a40', ec='k', linewidth=0, alpha=0.6, zorder=10))
+    # for polygon in original_polygons:
+    #     ax.add_patch(PolygonPatch(polygon, fc='#bb5a40', ec='k', linewidth=0, alpha=0.6, zorder=10))
 
-    plt.autoscale()
-    plt.show()
+    # plt.autoscale()
+    # plt.show()
 
     fig, ax = ox.plot_graph(road_network, close=False, show=False)
     for (polygon, color) in zip(polygons, colors):
         ax.add_patch(PolygonPatch(polygon, fc=color, ec='k', linewidth=0, alpha=0.8, zorder=10))
     
+    if parcel_files is not None:
+        for pf in parcel_files:
+            with shapefile.Reader(pf) as shp:
+                for sr in shp.shapeRecords():
+                    print(sr.record)
+                    plt.gca().add_patch(PolygonPatch(sr.shape, fc="white", ec='white', linewidth=1, alpha=0.2, zorder=10))
     plt.autoscale()
     plt.show()
 
-    print("exporting shapefile")
-    with shapefile.Writer(data_prefix/output_filename) as shp:
-        shp.field("index", "N")
-        for (index, polygon) in enumerate(polygons):
-            shp.record(index)
-            shp.shape(mapping(polygon))
+    if export_shapefile:
+        print("exporting shapefile")
+        with shapefile.Writer(data_prefix/output_filename) as shp:
+            shp.field("index", "N")
+            for (index, polygon) in enumerate(polygons):
+                shp.record(index)
+                shp.shape(mapping(polygon))
 
 def freetown():
     data_prefix = Path("data/private/sierra_leone")
@@ -152,9 +159,16 @@ def lagos_focus():
     geometry_column = "section_C/C2_Boundary"
     settlement_name_column = "section_B/B7_Settlement_Name_Community"
     output_filename = "lagos_focus.shp"
+    parcel_files = [
+		"data/private/lagos_parcels/lagosp_setinbound_section_7_Ojora Abete.shp",
+		"data/private/lagos_parcels/lagosp_setinbound_section__7_Ago Egun.shp",
+		"data/private/lagos_parcels/lagosp_setinbound_section__7_Arobadade.shp",
+		"data/private/lagos_parcels/lagosp_setinbound_section__7_Daramola.shp",
+		"data/private/lagos_parcels/lagosp_setinbound_section__7_Ebute Ilaje.shp",
+		"data/private/lagos_parcels/lagosp_setinbound_section__7_Isale Akoka.shp"
+	]
     
-    main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column, output_filename, 0.001)
-
+    main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column, output_filename, 0.001, export_shapefile=False, parcel_files=parcel_files)
 
 if __name__ == "__main__":
     freetown()
