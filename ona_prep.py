@@ -170,5 +170,34 @@ def lagos_focus():
     
     main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column, output_filename, 0.001, export_shapefile=False, parcel_files=parcel_files)
 
+# def sl_wmb():
+#     data_prefix = Path("data/private/sierra_leone_wmb")
+#     ona_csv_path = "sdi_boundaries_2019_01_29_05_18_33_811857.csv"
+#     ids = set([
+#         5120025,
+#         5120040,
+#         5119968,
+#         12482641,
+#         12480824,
+#         12731669,
+#     ])
+
+#     geometry_column = "section_C/C2_Boundary"
+#     settlement_name_column = "section_B/B7_Settlement_Name_Community"
+#     output_filename = "sierra_leone_wmb.shp"
+
+#     ona = pd.read_csv(data_prefix/ona_csv_path)
+#     ona = ona.loc[ona["_id"].isin(ids)]
+#     ona = ona[["_id", settlement_name_column, geometry_column]]
+#     ona[geometry_column] = ona[geometry_column].apply(geometry_text_to_polygon)
+
+#     with shapefile.Writer(data_prefix/output_filename) as shp:
+#         shp.field("id", "N")
+#         shp.field("name", "C")
+#         for (_id, name, geom) in ona.itertuples(index=False):
+#             shp.record(_id, name)
+#             # shp.record(name)
+#             shp.shape(mapping(geom))
+
 if __name__ == "__main__":
     freetown()
