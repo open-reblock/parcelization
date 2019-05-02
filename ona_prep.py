@@ -13,11 +13,20 @@ from networkx.readwrite import json_graph
 from shapely.geometry import LineString, MultiLineString, Polygon, mapping
 from shapely.ops import cascaded_union
 
+# colors = cycle([
+#     "#1a281f", "#635255", "#ce7b91", "#c0e8f9", "#b8d3d1", 
+#     "#413c58", "#a3c4bc", "#bfd7b5", "#e7efc5", "#f2dda4", 
+#     "#c03221", "#f2d0a4", "#545e75", "#3f826d", "#605b56", 
+#     "#837a75", "#acc18a", "#dafeb7", "#f2fbe0"])
+
 colors = cycle([
-    "#1a281f", "#635255", "#ce7b91", "#c0e8f9", "#b8d3d1", 
-    "#413c58", "#a3c4bc", "#bfd7b5", "#e7efc5", "#f2dda4", 
-    "#c03221", "#f2d0a4", "#545e75", "#3f826d", "#605b56", 
-    "#837a75", "#acc18a", "#dafeb7", "#f2fbe0"])
+    tuple(_/256.0 for _ in rgb) for rgb in [
+        [180, 213, 202],
+        [134, 188, 168],
+        [94, 153, 131],
+        [62, 101, 88]
+    ]
+])
 
 def diff_polygonize(region, linestrings, epsilon=0.00005):
     # https://gis.stackexchange.com/a/58674
@@ -48,7 +57,7 @@ def get_osm_graph(data_prefix, _id, name, polygon):
         print(_id, name, e)
         return None
 
-def main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column, output_filename, network_search_buffer = 0.001):
+def main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column, output_filename, network_search_buffer = 0.001, parcel_files=None, export_shapefile=False):
     # network_search_buffer: suggest 0.001 for single-settlement zoom-ins, 0.01 for graph construction
 
     print("reading data")
@@ -67,27 +76,44 @@ def main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column
     polygons = diff_polygonize(buffered_multipolygon, linestrings)
 
     print("plotting")
-    fig, ax = ox.plot_graph(road_network, close=False, show=False)
+    fig, ax = ox.plot_graph(road_network, close=False, show=False, node_color='black', node_size=1, edge_color="white")
 
-    for polygon in original_polygons:
-        ax.add_patch(PolygonPatch(polygon, fc='#bb5a40', ec='k', linewidth=0, alpha=0.6, zorder=10))
+    # for polygon in original_polygons:
+    #     ax.add_patch(PolygonPatch(polygon, fc='#bb5a40', ec='k', linewidth=0, alpha=0.6, zorder=10))
 
     plt.autoscale()
+    plt.savefig(output_filename.replace(".shp", "_network.png"), bbox_inches="tight", dpi=300, transparent=True)
     plt.show()
 
-    fig, ax = ox.plot_graph(road_network, close=False, show=False)
+    fig, ax = ox.plot_graph(road_network, close=False, show=False, node_alpha=0, edge_alpha=0)
+    mp_border = buffered_multipolygon.boundary
+    # ax = plt.gca()
     for (polygon, color) in zip(polygons, colors):
-        ax.add_patch(PolygonPatch(polygon, fc=color, ec='k', linewidth=0, alpha=0.8, zorder=10))
+        if not mp_border.intersects(polygon):
+            ax.add_patch(PolygonPatch(polygon, fc=color, ec='white', linewidth=0.5, zorder=10))
     
-    plt.autoscale()
+    if parcel_files is not None:
+        for pf in parcel_files:
+            with shapefile.Reader(pf) as shp:
+                for sr in shp.shapeRecords():
+                    print(sr.record)
+                    ax.add_patch(PolygonPatch(sr.shape, fc="white", ec='white', linewidth=0.5, alpha=0.2, zorder=10))
+    # plt.autoscale()
+    # ax.axis('off')
+    # ax.margins(0)
+    # ax.tick_params(which='both', direction='in')
+    # ax.get_xaxis().set_visible(False)
+    # ax.get_yaxis().set_visible(False)
+    plt.savefig(output_filename.replace(".shp", "_blocks.png"), bbox_inches="tight", dpi=300, transparent=True)
     plt.show()
 
-    print("exporting shapefile")
-    with shapefile.Writer(data_prefix/output_filename) as shp:
-        shp.field("index", "N")
-        for (index, polygon) in enumerate(polygons):
-            shp.record(index)
-            shp.shape(mapping(polygon))
+    if export_shapefile:
+        print("exporting shapefile")
+        with shapefile.Writer(data_prefix/output_filename) as shp:
+            shp.field("index", "N")
+            for (index, polygon) in enumerate(polygons):
+                shp.record(index)
+                shp.shape(mapping(polygon))
 
 def freetown():
     data_prefix = Path("data/private/sierra_leone")
@@ -96,36 +122,36 @@ def freetown():
 
     ids = set([
         12227565,
-        13792377,
-        12483794,
-        12483646,
-        12572108,
-        12575839,
-        13792326,
-        12575032,
-        2316424,
-        12731894,
-        12731669,
-        12480824,
-        12482641,
-        5120040,
-        5120025,
-        5119968,
-        1037833,
-        12484335,
-        16181451,
-        16176788,
-        16176404,
-        16081266,
-        2316927,
-        2316558,
-        2316856,
-        1037824,
-        1077121,
-        1037845,
-        12484697,
-        12480901,
-        1248109
+        # 13792377,
+        # 12483794,
+        # 12483646,
+        # 12572108,
+        # 12575839,
+        # 13792326,
+        # 12575032,
+        # 2316424,
+        # 12731894,
+        # 12731669,
+        # 12480824,
+        # 12482641,
+        # 5120040,
+        # 5120025,
+        # 5119968,
+        # 1037833,
+        # 12484335,
+        # 16181451,
+        # 16176788,
+        # 16176404,
+        # 16081266,
+        # 2316927,
+        # 2316558,
+        # 2316856,
+        # 1037824,
+        # 1077121,
+        # 1037845,
+        # 12484697,
+        # 12480901,
+        # 1248109
     ]) - set([1037845, 2316856, 5119968, 12482641, 12484697, 12572108 ]) # ignore known geometry issues
     geometry_column = "section_C/C2_Boundary"
     settlement_name_column = "section_B/B7_Settlement_Name_Community"
@@ -152,9 +178,45 @@ def lagos_focus():
     geometry_column = "section_C/C2_Boundary"
     settlement_name_column = "section_B/B7_Settlement_Name_Community"
     output_filename = "lagos_focus.shp"
+    parcel_files = [
+		"data/private/lagos_parcels/lagosp_setinbound_section_7_Ojora Abete.shp",
+		"data/private/lagos_parcels/lagosp_setinbound_section__7_Ago Egun.shp",
+		"data/private/lagos_parcels/lagosp_setinbound_section__7_Arobadade.shp",
+		"data/private/lagos_parcels/lagosp_setinbound_section__7_Daramola.shp",
+		"data/private/lagos_parcels/lagosp_setinbound_section__7_Ebute Ilaje.shp",
+		"data/private/lagos_parcels/lagosp_setinbound_section__7_Isale Akoka.shp"
+	]
     
-    main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column, output_filename, 0.001)
+    main(data_prefix, ona_csv_path, ids, geometry_column, settlement_name_column, output_filename, 0.001, export_shapefile=False, parcel_files=parcel_files)
 
+def sl_wmb():
+    data_prefix = Path("data/private/sierra_leone_wmb")
+    ona_csv_path = "sdi_boundaries_2019_01_29_05_18_33_811857.csv"
+    ids = set([
+        5120025,
+        5120040,
+        5119968,
+        12482641,
+        12480824,
+        12731669,
+    ])
+
+    geometry_column = "section_C/C2_Boundary"
+    settlement_name_column = "section_B/B7_Settlement_Name_Community"
+    output_filename = "sierra_leone_wmb.shp"
+
+    ona = pd.read_csv(data_prefix/ona_csv_path)
+    ona = ona.loc[ona["_id"].isin(ids)]
+    ona = ona[["_id", settlement_name_column, geometry_column]]
+    ona[geometry_column] = ona[geometry_column].apply(geometry_text_to_polygon)
+
+    with shapefile.Writer(data_prefix/output_filename) as shp:
+        shp.field("id", "N")
+        shp.field("name", "C")
+        for (_id, name, geom) in ona.itertuples(index=False):
+            shp.record(_id, name)
+            # shp.record(name)
+            shp.shape(mapping(geom))
 
 if __name__ == "__main__":
     freetown()
