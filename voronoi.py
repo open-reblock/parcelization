@@ -36,14 +36,12 @@ def bounded_centroid_voronoi(buildings, boundary):
     voronoi = spatial.Voronoi(
         list(zip(buildings.centroid.x, buildings.centroid.y)))
         # list(zip(*boundary.exterior.coords.xy)))
-    voronoi_edges = [
-        LineString(voronoi.vertices[line]) for line in voronoi.ridge_vertices if -1 not in line
-    ]
-    voronoi_polygons = gpd.GeoDataFrame(
-        geometry=[boundary.intersection(polygon) for polygon in shapely.ops.polygonize(voronoi_edges)])
+    # voronoi_edges = [
+    #     LineString(voronoi.vertices[line]) for line in voronoi.ridge_vertices if -1 not in line
+    # ]
+    #voronoi_polygons = gpd.GeoDataFrame(geometry=[boundary.intersection(polygon) for polygon in shapely.ops.polygonize(voronoi_edges)])
 
     # plot buildings and bounds first 
-
     ax = plt.gca()
     buildings.plot(ax=ax, alpha=0.3, facecolor="white", zorder=5)
     plot_line(ax, boundary.boundary)
