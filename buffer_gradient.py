@@ -1,3 +1,5 @@
+import json
+
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,23 +21,14 @@ def get_test_buildings():
 def get_test_boundary():
     return gpd.read_file("data/west-point-monrovia/monrovia-1-boundary.json")
 
-def main(buildings, boundary, color=pink, buffer_radius = 0.00001, building_color="white", building_edge_color="black", name=None):
-    boundary_geometry = boundary["geometry"][0]
-    gradient = []
-    buffered_union = buildings.unary_union
-
-    ax = plt.gca()
-
-    while not buffered_union.contains(boundary_geometry):
-        buffered_union = buffered_union.buffer(buffer_radius)
-        gradient.append(buffered_union)
-        print(len(gradient))
+def plot_gradient(gradient, boundary, buildings, ax=None, color=pink, building_color="white", building_edge_color="black", name=None):
+    if ax is None:
+        ax = plt.gca()
     alpha = 1.1/(len(gradient) - 1)
     for poly in gradient:
         ax.add_patch(PolygonPatch(poly, fc=color, alpha=alpha))
     boundary.plot(ax=ax, facecolor="white")
     buildings.plot(ax=ax, facecolor=building_color, edgecolor=building_edge_color, zorder=20, linewidth=0.1)
-
 
     ax.axis('off')
     ax.margins(0)
@@ -47,28 +40,48 @@ def main(buildings, boundary, color=pink, buffer_radius = 0.00001, building_colo
         plt.savefig(name, dpi=300, bbox_inches="tight")
     plt.show()
 
-def redhook(color, buffer, **kwargs):
-    buildings = gpd.read_file("data/redhook_shp/redhook_planet_osm_polygon_polygons.shp")
-    boundary = gpd.read_file("data/redhook_shp/subset-boundary.geojson")
+def get_gradient(buildings, boundary, buffer_radius = 0.00001, show=False, **kwargs):
+    boundary_geometry = boundary["geometry"][0]
+    gradient = []
+    buffered_union = buildings.unary_union
 
-    # buildings = buildings[buildings.intersects(boundary)]
+    while not buffered_union.contains(boundary_geometry):
+        buffered_union = buffered_union.buffer(buffer_radius)
+        gradient.append(buffered_union)
+        print(len(gradient))
+    if show:
+        plot_gradient(gradient, boundary, buildings, **kwargs)
 
-    main(buildings, boundary, color, buffer, **kwargs)
+    return gradient
 
+def process_diff(gradient, buildings, boundary):
+    ax = plt.gca()
+    boundary.plot(ax=ax, zorder=-20)
+    buildings.plot(ax=ax, zorder=-19, facecolor="white")
+    # diff = gradient[-1]
+    # for poly in gradient[-2::-1]:
+    #     diff = diff.difference(poly)
+    diff = gradient[0]
+    for poly in gradient[1:]:
+        diff = poly.difference(diff)
+    # print(diff)
+    ax.add_patch(PolygonPatch(diff, fc = "white", ec="black", zorder=2))
+    ax.axis('off')
+    ax.margins(0)
+    ax.tick_params(which='both', direction='in')
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+    plt.autoscale()
+    plt.show()
+
+# process_diff(gradient, boundary)
 
 if __name__ == "__main__":
-    # main(get_test_buildings(), get_test_boundary(), pink, name="westpoint.png")
+    buildings = get_test_buildings() #gpd.read_file("data/private/hoima/hoima_set.shp")
+    boundary  = get_test_boundary() #gpd.read_file("data/private/hoima/hoima_bounds.shp")
+    gradient = get_gradient(buildings, boundary, 0.00001, color=purple, show=False)
+    diff = gradient[-1].difference(gradient[-2])
+    process_diff(gradient, buildings, boundary)
 
-    redhook("black", 0.00025, building_color=coral, building_edge_color="white", name="redhook.png")
-    
-    # main(get_test_buildings(), get_test_boundary(), buffer_radius = 0.000001)
-    
-    # main(gpd.read_file(
-    #     "data/private/hoima/hoima_set.shp"), 
-    #     gpd.read_file("data/private/hoima/hoima_bounds.shp"), 
-    #     purple, 0.0001, name="hoima.png")
-
-    # main(gpd.read_file(
-    #     "data/private/hoima/hoima_set.shp"), 
-    #     gpd.read_file("data/private/hoima/hoima_bounds.shp"), 
-    #     purple, 0.00001)
+    # with open('hoima_gradient_diff_0.00001.geojson', 'wb') as dst:
+    #     json.dumps(gpd.GeoSeries(diff).to_json())

@@ -70,14 +70,18 @@ def main(buildings, boundary):
     partitions = gpd.GeoDataFrame({
         "geometry": grid_centers,
         "nearest" : [next(spatial_index.nearest(pt.coords[0], 1)) for pt in grid_centers]
-    }).groupby("nearest")["geometry"].apply(lambda pts: MultiPoint(list(pts)))
+    }).groupby("nearest")["geometry"].apply(lambda pts: MultiPoint(list(pts)).convex_hull.simplify(tolerance = 0.0000001, preserve_topology=True))
 
-    for (color, mp) in zip(colors, partitions):
-        plt.gca().add_patch(PolygonPatch(mp.buffer(0.000001), fc=color, ec=color))
+    for (color, partition) in zip(colors, partitions):
+        try:
+            plt.gca().add_patch(PolygonPatch(partition, fc=color, ec=color))
+        except ValueError:
+            pass
     boundary.plot(facecolor="white", edgecolor="grey", ax=plt.gca())
     buildings.plot(facecolor="white", edgecolor="black", ax=plt.gca(), zorder=20)
     plt.show()
 
 
 if __name__ == "__main__":
-    main(get_test_buildings(), get_test_boundary())
+    # main(get_test_buildings(), get_test_boundary())
+    main(gpd.read_file("data/private/hoima/hoima_set.shp"), gpd.read_file("data/private/hoima/hoima_bounds.shp"))

@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytess
-import scipy.spatial as spatial
 import shapely
 from descartes import PolygonPatch
+from scipy.spatial import Voronoi, voronoi_plot_2d
 from shapely.geometry import LineString, Point, Polygon, shape
 
 
@@ -22,8 +22,8 @@ def get_test_boundary():
     return gpd.read_file("data/west-point-monrovia/monrovia-1-boundary.json")["geometry"][0]
 
 def naive_centroid_voronoi(buildings):
-    voronoi = spatial.Voronoi(list(zip(buildings.centroid.x, buildings.centroid.y)))
-    spatial.voronoi_plot_2d(voronoi, ax=plt.gca())
+    voronoi = Voronoi(list(zip(buildings.centroid.x, buildings.centroid.y)))
+    voronoi_plot_2d(voronoi, ax=plt.gca())
     buildings.plot(alpha=0.1, column="index")
     plt.autoscale()
     plt.show()
@@ -33,7 +33,7 @@ def plot_line(ax, ob):
     ax.plot(x, y, color="white", linewidth=2, solid_capstyle='round', zorder=1)
 
 def bounded_centroid_voronoi(buildings, boundary):
-    voronoi = spatial.Voronoi(
+    voronoi = Voronoi(
         list(zip(buildings.centroid.x, buildings.centroid.y)))
         # list(zip(*boundary.exterior.coords.xy)))
     # voronoi_edges = [
@@ -57,7 +57,7 @@ def bounded_centroid_voronoi(buildings, boundary):
 
     # voronoi_polygons.plot(ax=plt.gca(), facecolor="red", edgecolor="black", alpha=0.5)   
     ax = plt.gca() 
-    spatial.voronoi_plot_2d(voronoi, ax=ax, show_points=False, show_vertices=False, line_colors=tuple(_/256.0 for _ in [134, 188, 168]), line_width=2)
+    voronoi_plot_2d(voronoi, ax=ax, show_points=False, show_vertices=False, line_colors=tuple(_/256.0 for _ in [134, 188, 168]), line_width=2)
     ax.plot(voronoi.points[:,0], voronoi.points[:,1], '.', color=tuple(_/256.0 for _ in [62, 101, 88]))
     # ax.plot(voronoi.vertices[:,0], voronoi.vertices[:,1], 'o', color=tuple(_/256.0 for _ in [134, 188, 168]))
     buildings.plot(ax=ax, alpha=0.5, facecolor="white", zorder=-1)
@@ -87,8 +87,8 @@ def dissolved_buffer_voronoi(gdf, buffer_radius = 0.00001):
     plt.show()
 
     # voronoi from building centroids 
-    voronoi = spatial.Voronoi(list(zip(gdf.centroid.x, gdf.centroid.y)))
-    spatial.voronoi_plot_2d(voronoi, ax=plt.gca())
+    voronoi = Voronoi(list(zip(gdf.centroid.x, gdf.centroid.y)))
+    voronoi_plot_2d(voronoi, ax=plt.gca())
     gdf.plot(alpha=0.1, column="index", ax=plt.gca())
     plt.autoscale()
     plt.show()
@@ -105,7 +105,7 @@ def dissolved_buffer_voronoi(gdf, buffer_radius = 0.00001):
         .apply(lambda row: row["geometry"].intersection(row["geometry_voronoi"]), axis=1))
     
     intersection_geometry.plot(edgecolor="red")
-    spatial.voronoi_plot_2d(voronoi, ax=plt.gca())
+    voronoi_plot_2d(voronoi, ax=plt.gca())
     gdf.plot(alpha=0.1, column="index", ax=plt.gca())
     plt.show()
 
@@ -113,7 +113,7 @@ def dissolved_buffer_voronoi(gdf, buffer_radius = 0.00001):
 def corner_voronoi(buildings, boundary):
     building_points = buildings["geometry"].apply(lambda poly: list(zip(*poly.exterior.coords.xy))).sum()
     # building_points_x, building_points_y = list(zip(*building_points))
-    # voronoi = spatial.Voronoi(building_points + list(zip(*boundary.exterior.coords.xy)), qhull_options='Qbb Qc Qx Tv')
+    # voronoi = Voronoi(building_points + list(zip(*boundary.exterior.coords.xy)), qhull_options='Qbb Qc Qx Tv')
     # spatial.voronoi_plot_2d(voronoi, ax=plt.gca())
 
     voronoi_points, voronoi_polygons = zip(*pytess.voronoi(building_points + list(zip(*boundary.exterior.coords.xy))))
