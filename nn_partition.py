@@ -49,11 +49,12 @@ def nearest_to_exterior(pt, footprints):
 def nearest_by_index(pt, idx):
     return list(idx.nearest(pt, 1))
 
-def main(buildings, boundary):
+def main(buildings, boundary, show=False):
     #buildings_union = buildings.unary_union
     spatial_index  = buildings.sindex
     
-    (grid_centers, _, _) = make_bounded_grid(boundary["geometry"][0], 100)
+    # (grid_centers, _, _) = make_bounded_grid(boundary["geometry"][0], 100)
+    (grid_centers, _, _) = make_bounded_grid(boundary, 100)
     grid_centers = gpd.GeoSeries(list(grid_centers))#.difference(buildings_union)
     grid_centers = grid_centers[grid_centers.is_empty == False]
 
@@ -70,16 +71,22 @@ def main(buildings, boundary):
     partitions = gpd.GeoDataFrame({
         "geometry": grid_centers,
         "nearest" : [next(spatial_index.nearest(pt.coords[0], 1)) for pt in grid_centers]
-    }).groupby("nearest")["geometry"].apply(lambda pts: MultiPoint(list(pts)).convex_hull.simplify(tolerance = 0.0000001, preserve_topology=True))
+    }).groupby("nearest")["geometry"].apply(
+        #lambda pts: MultiPoint(list(pts)).convex_hull.simplify(tolerance = 0.0000001, preserve_topology=True))
+        lambda pts: MultiPoint(list(pts)).convex_hull)
 
-    for (color, partition) in zip(colors, partitions):
-        try:
-            plt.gca().add_patch(PolygonPatch(partition, fc=color, ec=color))
-        except ValueError:
-            pass
-    boundary.plot(facecolor="white", edgecolor="grey", ax=plt.gca())
-    buildings.plot(facecolor="white", edgecolor="black", ax=plt.gca(), zorder=20)
-    plt.show()
+    if show:
+        for (color, partition) in zip(colors, partitions):
+            try:
+                plt.gca().add_patch(PolygonPatch(partition, fc=color, ec=color))
+            except ValueError:
+                pass
+        # boundary.plot(facecolor="white", edgecolor="grey", ax=plt.gca())
+        buildings.plot(facecolor="white", edgecolor="black", ax=plt.gca(), zorder=20)
+        plt.gca().add_patch(PolygonPatch(boundary, fc="white", ec="black", zorder=-1))
+        plt.show()
+
+    return partitions
 
 
 if __name__ == "__main__":
